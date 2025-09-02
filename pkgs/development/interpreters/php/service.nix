@@ -171,14 +171,11 @@ in
       documentation = [ "man:php-fpm(8)" ];
 
       serviceConfig = {
-        Type = if cfg.settings.systemd_interval != 0 then "notify-reload" else "notify";
-        ExecReload = "${coreutils}/bin/kill -USR2 $MAINPID";
         RuntimeDirectory = "php-fpm";
         RuntimeDirectoryPreserve = true;
         Restart = "always";
       };
     };
-
   }
   // lib.optionalAttrs (options ? finit) {
 
