@@ -308,14 +308,25 @@ in
             ProtectHome = true;
             # XXX: We need AF_NETLINK to make the sendmail SUID binary from postfix work
             RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
-            Type = if cfg.settings.systemd_interval != 0 then "notify-reload" else "notify";
             ExecStart = "${poolOpts.phpPackage}/bin/php-fpm -y ${cfgFile} -c ${iniFile}";
-            ExecReload = "${pkgs.coreutils}/bin/kill -USR2 $MAINPID";
             RuntimeDirectory = "phpfpm";
             RuntimeDirectoryPreserve = true; # Relevant when multiple processes are running
             Restart = "always";
             WatchdogSec = 15;
           };
+          }
+          // (
+            if cfg.settings.systemd_interval != 0 then
+              {
+                Type = "notify-reload";
+                ReloadSignal = "USR2";
+              }
+            else
+              {
+                Type = "notify";
+                ExecReload = "${coreutils}/bin/kill -USR2 $MAINPID";
+              }
+          );
       }
     ) cfg.pools;
   };
