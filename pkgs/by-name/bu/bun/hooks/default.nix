@@ -1,15 +1,18 @@
 {
   lib,
   stdenvNoCC,
-  prefetch-bun-deps,
   makeSetupHook,
+  pkg-config,
+  cacert,
   bun,
+  curl,
   rustPlatform,
 }:
-{
-  prefetch-bun-deps = rustPlatform.makeRustPackage (finalAttrs: {
-    pname = "nix-prefetch-bun";
-    version = lib.trivial.release;
+
+let
+  prefetch-bun-deps = rustPlatform.buildRustPackage {
+    pname = "prefetch-bun-deps";
+    version = (lib.importTOML ./Cargo.toml).package.version;
 
     src = lib.sourceFilesBySuffices ./. [
       ".rs"
@@ -19,58 +22,63 @@
 
     cargoLock.lockFile = ./Cargo.lock;
 
+    nativeBuildInputs = [ pkg-config ];
+    buildInputs = [ curl ];
+
     meta = {
       description = "Prefetch dependencies from bun (for use with `bun.fetchDeps`)";
       mainProgram = "prefetch-bun-deps";
       maintainers = with lib.maintainers; [ eveeifyeve ];
       license = lib.licenses.mit;
-      broken = true; # Experiemential and WIP, Doesn't work yet
     };
-  });
+  };
+in
+{
+  prefetch-bun-deps = prefetch-bun-deps;
+
   fetchDeps = lib.extendMkDerivation {
     constructDrv = stdenvNoCC.mkDerivation;
     excludeDrvArgNames = [
-      "pname"
-      "version"
+      "hash"
       "workspaces"
-      "useArchitechure"
-      "installFlags"
     ];
     extendDrvArgs =
-      finalAttrs:
+      _finalAttrs:
       {
+        pname,
+        version,
+        hash ? "",
         workspaces ? [ ],
-        useArchitecture ? false,
         ...
       }@args:
+      let
+        hash_ =
+          if hash != "" then
+            {
+              outputHash = hash;
+            }
+          else
+            {
+              outputHash = "";
+              outputHashAlgo = "sha256";
+            };
+
+        # The fetcher downloads the whole lockfile, so workspaces do not
+        # influence the output; they are only used by `bun.configHook`.
+      in
       {
-        name = "${args.pname}-${args.version}-deps";
+        name = "${pname}-${version}-bun-deps";
 
         __structuredAttrs = true;
         strictDeps = true;
+        enableParallelBuilding = args.enableParallelBuilding or true;
 
-        nativeBuildInputs = [
-          prefetch-bun-deps
-        ]
-        ++ args.nativeBuildInputs or [ ];
+        nativeBuildInputs = [ prefetch-bun-deps ] ++ (args.nativeBuildInputs or [ ]);
 
         buildPhase = ''
           runHook preBuild
 
-          prefetch-bun-deps $src \
-          ${lib.concatStringsSep " " (lib.map (package: "--filter=${package}") workspaces)} \
-          ${
-            lib.concatStringsSep " " (
-              if useArchitecture then
-                [
-                  "--os=${stdenvNoCC.hostPlatform.node.platform}"
-                  "--cpu=${stdenvNoCC.hostPlatform.node.arch}"
-                ]
-              else
-                [ ]
-            )
-          } \
-          $out
+          prefetch-bun-deps "$src" "$out"
 
           runHook postBuild
         '';
@@ -79,11 +87,27 @@
         dontConfigure = true;
         dontFixup = true;
 
+        impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [
+          "GIT_PROXY_COMMAND"
+          "SOCKS_SERVER"
+        ];
+
+        env.SSL_CERT_FILE =
+          if (hash == "" || hash == lib.fakeHash || hash == lib.fakeSha256 || hash == lib.fakeSha512) then
+            "${cacert}/etc/ssl/certs/ca-bundle.crt"
+          else
+            "/no-cert-file.crt";
+
         outputHashMode = "recursive";
-      };
+      }
+      // hash_;
   };
+
   configHook = makeSetupHook {
     name = "bun-config-hook";
-    propagatedBuildInputs = [ bun ];
+    propagatedBuildInputs = [
+      bun
+      prefetch-bun-deps
+    ];
   } ./bun-config-hook.sh;
 }

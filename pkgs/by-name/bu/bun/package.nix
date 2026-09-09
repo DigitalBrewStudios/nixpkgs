@@ -67,7 +67,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     '';
 
   passthru = {
-    inherit (callPackages ./hooks { bun = finalAttrs.finalPackage; }) fetchDeps configHook;
+    inherit (callPackages ./hooks { bun = finalAttrs.finalPackage; })
+      prefetch-bun-deps
+      fetchDeps
+      configHook
+      ;
     sources = {
       "aarch64-darwin" = fetchurl {
         url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-darwin-aarch64.zip";
