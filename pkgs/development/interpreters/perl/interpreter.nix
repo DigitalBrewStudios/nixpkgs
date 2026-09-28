@@ -183,8 +183,12 @@ stdenv.mkDerivation (
       (
         if crossCompiling then
           ''
-            substituteInPlace dist/PathTools/Cwd.pm \
-              --replace "/bin/pwd" '${coreutils}/bin/pwd'
+            # Pwd doesn't work if platform is set to windows, so no need to replace pwd for windows platforms.
+            ${lib.optionalString (!stdenv.hostPlatform.isWindows) ''
+              substituteInPlace dist/PathTools/Cwd.pm \
+                --replace "/bin/pwd" '${coreutils}/bin/pwd'
+              }
+            ''}
             substituteInPlace cnf/configure_tool.sh --replace "cc -E -P" "cc -E"
           ''
         else
