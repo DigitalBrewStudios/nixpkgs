@@ -1,7 +1,6 @@
 {
   lib,
   stdenvNoCC,
-  overrideCC,
   pkgsCross,
   bash,
 }:
@@ -9,36 +8,19 @@
 stdenvNoCC.mkDerivation (
   finalAttrs:
   let
-    useWin32ThreadModel =
-      stdenv:
-      overrideCC stdenv (
-        stdenv.cc.override (old: {
-          cc = old.cc.override {
-            threadsCross = null;
-          };
-        })
-      );
-
-    mingw32Stdenv = useWin32ThreadModel pkgsCross.mingw32.stdenv;
-    mingwW64Stdenv = useWin32ThreadModel pkgsCross.mingwW64.stdenv;
-
     dxvk32 =
       if stdenvNoCC.hostPlatform.isDarwin then
-        pkgsCross.mingw32.dxvk_1.override {
-          stdenv = mingw32Stdenv;
-          enableMoltenVKCompat = true;
-        }
+        pkgsCross.mingw32.dxvk_1.override { enableMoltenVKCompat = true; }
       else
-        pkgsCross.mingw32.dxvk_3.override { stdenv = mingw32Stdenv; };
+        pkgsCross.mingw32.dxvk_3;
 
     dxvk64 =
       if stdenvNoCC.hostPlatform.isDarwin then
         pkgsCross.mingwW64.dxvk_1.override {
-          stdenv = mingwW64Stdenv;
           enableMoltenVKCompat = true;
         }
       else
-        pkgsCross.mingwW64.dxvk_3.override { stdenv = mingwW64Stdenv; };
+        pkgsCross.mingwW64.dxvk_3;
   in
   {
     pname = "dxvk";
@@ -55,7 +37,7 @@ stdenvNoCC.mkDerivation (
     buildCommand = ''
       mkdir -p $out/bin $bin $lib
       substitute ${./setup_dxvk.sh} $out/bin/setup_dxvk.sh \
-        --subst-var-by bash ${bash} \
+        --subst-var-by bash ${bash}" \
         --subst-var-by dxvk32 ${dxvk32} \
         --subst-var-by dxvk64 ${dxvk64} \
         --subst-var-by version ${finalAttrs.version}
