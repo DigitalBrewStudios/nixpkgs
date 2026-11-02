@@ -96,6 +96,11 @@ let
       genericModules = {
         meta-maintainers = ./modules/generic/meta-maintainers.nix;
         assertions = ./modules/generic/assertions.nix;
+        command-line = ./modules/generic/command-line.nix;
+        configuration = ./modules/generic/config-data.nix;
+
+        # Tied to a specific class.
+        package-module = ./modules/generic/package-module.nix;
       };
 
       # Eval-time filesystem handling

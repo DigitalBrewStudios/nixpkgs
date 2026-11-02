@@ -57,7 +57,7 @@ in
     name = lib.mkDefault name;
     source = lib.mkIf (config.text != null) (
       let
-        name' = "service-configdata-" + lib.replaceStrings [ "/" ] [ "-" ] name;
+        name' = "configdata-" + lib.replaceStrings [ "/" ] [ "-" ] name;
       in
       lib.mkDerivedConfig options.text (pkgs.writeText name')
     );
