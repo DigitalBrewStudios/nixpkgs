@@ -39,9 +39,27 @@
             unsafeTarget = true;
           };
         };
+        system.services."ghostunnel-hardened" = {
+          imports = [ pkgs.ghostunnel.services.default ];
+          # Exercise the systemd hardening option tree of the systemd
+          # service-manager integration.
+          ghostunnel = {
+            listen = "0.0.0.0:2443";
+            cert = "/root/service-cert.pem";
+            key = "/root/service-key.pem";
+            disableAuthentication = true;
+            target = "backend:80";
+            unsafeTarget = true;
+          };
+          systemd.hardening = {
+            noNewPrivileges = true;
+            protectHome = "read-only";
+          };
+        };
         networking.firewall.allowedTCPPorts = [
           443
           1443
+          2443
         ];
       };
     client =
@@ -113,6 +131,11 @@
 
     # Client must authenticate with certificate
     client.fail("bash -c 'diff <(curl -v --no-progress-meter --cacert /root/ca.pem https://service:1443/hi.txt) <(echo hi)'")
+
+    # The hardened instance's unit carries the systemd hardening options
+    # (systemd.hardening.* / ghostunnel.systemdHardening)
+    service.succeed("systemctl cat ghostunnel-hardened.service | grep -Fq 'NoNewPrivileges=true'")
+    service.succeed("systemctl cat ghostunnel-hardened.service | grep -Fq 'ProtectHome=read-only'")
   '';
 
   meta.maintainers = with lib.maintainers; [

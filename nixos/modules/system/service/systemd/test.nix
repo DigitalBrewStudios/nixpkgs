@@ -91,6 +91,38 @@ let
             config.systemd.lib.escapeSystemdExecArgs config.process.argv + " --systemd-unit %n";
         };
 
+      # Test that systemd.hardening options are mapped onto serviceConfig
+      # at mkDefault priority
+      system.services.hardened = {
+        process.argv = [
+          hello'
+          "--greeting"
+          "hardened"
+        ];
+        systemd.hardening = {
+          noNewPrivileges = true;
+          privateTmp = true;
+          protectHome = "read-only";
+          protectSystem = "full";
+          capabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
+          restrictAddressFamilies = [ "AF_UNIX" ];
+          systemCallArchitectures = [ "native" ];
+        };
+      };
+
+      # Test that systemd.service.serviceConfig definitions override the
+      # mkDefault values that systemd.hardening produces, and that unset
+      # hardening options are not written to serviceConfig at all.
+      system.services.hardened-override = {
+        process.argv = [
+          hello'
+          "--greeting"
+          "hardened-override"
+        ];
+        systemd.hardening.noNewPrivileges = true;
+        systemd.service.serviceConfig.NoNewPrivileges = false;
+      };
+
       # irrelevant stuff
       system.stateVersion = "25.05";
       fileSystems."/" = {
@@ -140,6 +172,21 @@ runCommand "test-modular-service-systemd-units"
       [[ ! -e ${toplevel}/etc/systemd/system/foo.socket ]]
       [[ ! -e ${toplevel}/etc/systemd/system/bar.socket ]]
       [[ ! -e ${toplevel}/etc/systemd/system/bar-db.socket ]]
+
+      # systemd.hardening -> serviceConfig
+      grep -F 'PrivateTmp=true' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+      grep -F 'NoNewPrivileges=true' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+      grep -F 'ProtectHome=read-only' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+      grep -F 'ProtectSystem=full' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+      grep -F 'CapabilityBoundingSet=CAP_NET_BIND_SERVICE' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+      grep -F 'RestrictAddressFamilies=AF_UNIX' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+      grep -F 'SystemCallArchitectures=native' ${toplevel}/etc/systemd/system/hardened.service >/dev/null
+
+      # systemd.service.serviceConfig overrides makeDefault-priority hardening
+      grep -F 'NoNewPrivileges=false' ${toplevel}/etc/systemd/system/hardened-override.service >/dev/null
+
+      # Unset hardening options are not written at all
+      ! grep -q 'MemoryDenyWriteExecute=' ${toplevel}/etc/systemd/system/hardened.service
     )
     echo 🐬👍
     touch $out

@@ -56,6 +56,9 @@ in
   imports = [
     (lib.mkAliasOptionModule [ "systemd" "service" ] [ "systemd" "services" "" ])
     (lib.mkAliasOptionModule [ "systemd" "socket" ] [ "systemd" "sockets" "" ])
+
+    # See ./hardening.nix
+    ./hardening.nix
   ];
   options = {
     systemd.lib = mkOption {
