@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  callPackages,
   fetchFromGitHub,
   rustPlatform,
   installShellFiles,
@@ -48,7 +49,23 @@ rustPlatform.buildRustPackage (finalAttrs: {
   doInstallCheck = true;
   nativeInstallCheckInputs = [ versionCheckHook ];
 
-  passthru.updateScript = nix-update-script { };
+  passthru = {
+    inherit (callPackages ./lib.nix { })
+      evalConfig
+      withConfig
+      buildConfig
+      ;
+
+    tests = callPackages ./tests.nix { };
+
+    # Documentation for functions defined in `./lib.nix`
+    functionsDoc = callPackages ./functions-doc.nix { };
+
+    # Documentation for options declared in `prek.evalConfig` configurations
+    optionsDoc = callPackages ./options-doc.nix { };
+
+    updateScript = nix-update-script { };
+  };
 
   meta = {
     homepage = "https://github.com/j178/prek";

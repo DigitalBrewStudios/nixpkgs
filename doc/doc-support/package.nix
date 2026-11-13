@@ -15,6 +15,7 @@
   markdown-code-runner,
   roboto,
   treefmt,
+  prek,
   nixosOptionsDoc,
 }:
 stdenvNoCC.mkDerivation (
@@ -82,6 +83,8 @@ stdenvNoCC.mkDerivation (
       ln -s ${optionsJSON}/share/doc/nixos/options.json ./config-options.json
       ln -s ${treefmt.functionsDoc.markdown} ./packages/treefmt-functions.section.md
       ln -s ${treefmt.optionsDoc.optionsJSON}/share/doc/nixos/options.json ./treefmt-options.json
+      ln -s ${prek.functionsDoc.markdown} ./packages/prek-functions.section.md
+      ln -s ${prek.optionsDoc.optionsJSON}/share/doc/nixos/options.json ./prek-options.json
       ln -s ${docs.generic.meta-maintainers.optionsJSON}/share/doc/nixos/options.json ./options-modules-generic-meta-maintainers.json
     '';
 

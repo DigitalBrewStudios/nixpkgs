@@ -24,18 +24,30 @@ let
     allowAliases = false;
   };
 
+  fs = pkgs.lib.fileset;
+  nixFilesSrc = fs.toSource {
+    root = ../.;
+    fileset = fs.difference ../. (fs.maybeMissing ../.git);
+  };
+
   fmt =
     let
       treefmt = pkgs.treefmt.withConfig ./treefmt.nix;
-      fs = pkgs.lib.fileset;
-      nixFilesSrc = fs.toSource {
-        root = ../.;
-        fileset = fs.difference ../. (fs.maybeMissing ../.git);
-      };
     in
     {
       pkg = treefmt;
       check = treefmt.check nixFilesSrc;
+    };
+
+  prek =
+    let
+      # Import the in-tree prek package against the (possibly pinned) pkgs set so
+      # `withConfig` is available even when ci/default.nix uses its pinned default nixpkgs.
+      prek' = (pkgs.callPackage ../pkgs/by-name/pr/prek/package.nix { }).withConfig ./prek.nix;
+    in
+    {
+      pkg = prek';
+      check = prek'.check nixFilesSrc;
     };
 
   # nixos-render-docs and nixos-render-docs-redirects
@@ -46,12 +58,19 @@ let
       nixos-render-docs-redirects =
         final.callPackage ../pkgs/by-name/ni/nixos-render-docs-redirects/package.nix
           { };
+      # in-tree documentation needs the in-tree prek's functionsDoc/optionsDoc
+      prek = final.callPackage ../pkgs/by-name/pr/prek/package.nix { };
     }
   );
 
 in
 rec {
-  inherit pkgs docPkgs fmt;
+  inherit
+    pkgs
+    docPkgs
+    fmt
+    prek
+    ;
   codeownersValidator = pkgs.callPackage ./codeowners-validator { };
 
   # FIXME(lf-): it might be useful to test other Nix implementations

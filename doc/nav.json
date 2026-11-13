@@ -757,6 +757,21 @@
               ]
             },
             {
+              "id": "prek",
+              "label": "prek",
+              "children": [
+                {
+                  "id": "index",
+                  "file": "packages/prek.section.md"
+                },
+                {
+                  "id": "prek-functions",
+                  "id-prefix": "auto-generated-prek-functions",
+                  "file": "packages/prek-functions.section.md"
+                }
+              ]
+            },
+            {
               "id": "steam",
               "file": "packages/steam.section.md"
             },

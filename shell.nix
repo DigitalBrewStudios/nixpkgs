@@ -43,7 +43,7 @@
   ),
 }:
 let
-  inherit (import ./ci { inherit nixpkgs system; }) pkgs fmt;
+  inherit (import ./ci { inherit nixpkgs system; }) pkgs fmt prek;
 
   # For `nix-shell -A hello`
   curPkgs = removeAttrs (import ./. { inherit system; }) [
@@ -64,6 +64,8 @@ curPkgs
     pkgs.gh
     # treefmt wrapper
     fmt.pkg
+    # prek wrapper, running the pre-commit hooks
+    prek.pkg
   ];
 }
 // {
