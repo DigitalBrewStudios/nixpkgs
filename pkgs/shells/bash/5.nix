@@ -10,6 +10,7 @@
   libredirect,
   glibcLocales,
   gnused,
+  cygwin,
 
   interactive ? true,
   readline,
@@ -143,7 +144,9 @@ lib.warnIf (withDocs != null)
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [ stdenv.cc.bintools ];
 
-    buildInputs = lib.optionals interactive [ readline ];
+    buildInputs =
+      lib.optionals interactive [ readline ]
+      ++ lib.optionals stdenv.hostPlatform.isWindows [ cygwin.newlib-cygwin-headers ];
 
     enableParallelBuilding = true;
 
@@ -281,7 +284,7 @@ lib.warnIf (withDocs != null)
       license = lib.licenses.gpl3Plus;
       platforms = lib.platforms.all;
       # https://github.com/NixOS/nixpkgs/issues/333338
-      badPlatforms = [ lib.systems.inspect.patterns.isMinGW ];
+      # badPlatforms = [ lib.systems.inspect.patterns.isMinGW ];
       maintainers = with lib.maintainers; [ infinisil ];
       teams = [ lib.teams.security-review ];
       mainProgram = "bash";

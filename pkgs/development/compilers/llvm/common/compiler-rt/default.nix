@@ -246,6 +246,12 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "COMPILER_RT_ENABLE_IOS" false)
     ]
   )
+  ++ lib.optionals (stdenv.hostPlatform.isMinGW && haveLibc) [
+    (lib.cmakeBool "COMPILER_RT_BUILD_LIBFUZZER" false)
+    (lib.cmakeBool "COMPILER_RT_BUILD_XRAY" false)
+    (lib.cmakeBool "COMPILER_RT_BUILD_MEMPROF" false)
+    (lib.cmakeBool "COMPILER_RT_BUILD_ORC" false)
+  ]
   ++ lib.optionals (noSanitizers && lib.versionAtLeast release_version "19") [
     (lib.cmakeBool "COMPILER_RT_BUILD_CTX_PROFILE" false)
   ]

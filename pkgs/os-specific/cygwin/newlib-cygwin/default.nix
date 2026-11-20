@@ -78,7 +78,7 @@
         # winsup
         gpl3
       ];
-      platforms = lib.platforms.cygwin;
+      platforms = lib.platforms.cygwin ++ lib.platforms.windows;
       maintainers = [ lib.maintainers.corngood ];
     };
   }

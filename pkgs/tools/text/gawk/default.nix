@@ -8,6 +8,7 @@
   interactive ? false,
   readline,
   autoreconfHook, # no-pma fix
+  gnulib,
 
   /*
     Test suite broke on:
@@ -69,6 +70,7 @@ stdenv.mkDerivation (finalAttrs: {
     lib.optionals interactive [
       runtimeShellPackage
       readline
+      gnulib
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       locale
